@@ -6,6 +6,7 @@ WIDTH, HEIGHT = 800, 400
 FPS = 60
 GRAVITY = 0.8
 JUMP_STRENGTH = -15
+SPEED = 5
 
 # Colors
 WHITE = (255, 255, 255)
@@ -56,18 +57,28 @@ while True:
                 player_vel_y = JUMP_STRENGTH
                 on_ground = False
 
+    # Movement: Check which keys are currently held down
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and player.left > 0:  # Move left + boundary check
+        player.x -= SPEED
+    if keys[pygame.K_RIGHT] and player.right < WIDTH:  # Move right + boundary check
+        player.x += SPEED
+
     # Physics: Gravity
+    previous_bottom = player.bottom
     player_vel_y += GRAVITY
     player.y += player_vel_y
 
     # Collision: Platforms
+    # Only land if the player was above the platform, so hitting its side
+    # doesn't teleport them on top. The 1px offset keeps on_ground steady
+    # while standing still.
     on_ground = False
     for plat in platforms:
-        if player.colliderect(plat):
-            if player_vel_y > 0: # Falling
-                player.bottom = plat.top
-                player_vel_y = 0
-                on_ground = True
+        if player_vel_y >= 0 and previous_bottom <= plat.top and player.move(0, 1).colliderect(plat):
+            player.bottom = plat.top
+            player_vel_y = 0
+            on_ground = True
 
     # Collision: Spikes (Simplistic point-in-rect check)
     for spike in spikes:
